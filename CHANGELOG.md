@@ -3,6 +3,46 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 7: Streamlit dashboard
+
+- `f1analytics.visualization`: three chart-builder modules, each a pure
+  function (DataFrame/dataclass in, `plotly.graph_objects.Figure` out, no
+  Streamlit/FastF1 import):
+  - `race.py`: `build_position_evolution_chart` — inverted position axis
+    (P1 at top), shaded Yellow/SC/VSC/Red bands, pit-stop markers,
+    end-of-line driver labels (so identity never depends on color alone
+    when more drivers are plotted than the palette has hues).
+  - `strategy.py`: `build_strategy_chart` (compound-colored stint bars
+    across the grid) and `build_degradation_chart` (clean-lap scatter +
+    fitted line, or an explicit "no reliable fit" annotation instead of a
+    fabricated line).
+  - `telemetry.py`: `build_telemetry_channels_chart` (stacked per-channel
+    subplots) and `build_time_delta_chart` (time-delta area chart with an
+    explicit sign-convention axis title).
+  - Palette: an 8-hue CVD-validated categorical set for driver lines
+    (Delta E >= 8 OKLab, both light/dark surfaces — from the dataviz
+    skill's reference palette), Carto's "Safe" 11-color set for the
+    10-team case, and a validated blue<->red diverging pair for gain/loss.
+- `app/state.py`: shared Streamlit session-state/caching glue — the single
+  place owning "which session is selected", FastF1 loading (cached), and
+  clean-lap flagging (cached), so every page reads from one source of truth
+  instead of duplicating the sidebar picker.
+- Full interactive dashboard: `app/streamlit_app.py` (Overview: session
+  picker + methodology summary) plus five pages — **Race Pace**, **Tyres &
+  Stints**, **Position & Pit Stops**, **Qualifying** (gracefully declines on
+  non-qualifying sessions), and **Telemetry** (loads on demand — the only
+  page that needs the heavier telemetry=True session load, cached once and
+  shared across both compared drivers).
+- Verified with `streamlit.testing.v1.AppTest` against real cached FastF1
+  data (2023 Bahrain GP Race and Qualifying, including telemetry) for every
+  page, plus a full `streamlit run` boot check — no exceptions, correct
+  page-type handling (e.g. Qualifying page on a Race session).
+- 11 new pytest tests for the chart builders (structural: trace counts,
+  axis config, error paths) and 7 for the Streamlit pages themselves
+  (via AppTest with synthetic data injected through monkeypatched
+  `app/state.py` accessors — no network or FastF1 dependency, consistent
+  with "don't test FastF1 itself").
+
 ## 2026-08-29 — Milestone 6: Qualifying and telemetry analysis
 
 - `f1analytics.data.loader`: `get_qualifying_segment_labels` (wraps

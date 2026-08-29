@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%206%20%E2%80%94%20qualifying%20%26%20telemetry-yellow)
+![Status](https://img.shields.io/badge/status-Milestone%207%20%E2%80%94%20dashboard-yellow)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -35,7 +35,7 @@ can be trusted and extended.
 
 ## 3. Screenshots
 
-_Screenshots will be added once the dashboard UI is further along (Milestone 7)._
+_Screenshots will be added at the v1.0 tag (Milestone 8) once the UI is in its final polished state — the dashboard itself is fully functional as of Milestone 7 (`streamlit run app/streamlit_app.py`)._
 
 ## 4. Architecture
 
@@ -43,8 +43,14 @@ _Screenshots will be added once the dashboard UI is further along (Milestone 7).
 f1-race-analytics/
 │
 ├── app/
-│   ├── streamlit_app.py     # UI wiring only — no analytical logic
-│   └── pages/                # additional Streamlit pages (later milestones)
+│   ├── streamlit_app.py     # Overview page: session selection + summary
+│   ├── state.py             # shared session-state/caching glue (UI-only, no analysis)
+│   └── pages/
+│       ├── 1_Race_Pace.py
+│       ├── 2_Tyres_and_Stints.py
+│       ├── 3_Position_and_Pitstops.py
+│       ├── 4_Qualifying.py
+│       └── 5_Telemetry.py
 │
 ├── src/
 │   └── f1analytics/
@@ -65,7 +71,10 @@ f1-race-analytics/
 │       │   └── telemetry.py   # distance-synchronized telemetry comparison
 │       ├── models/
 │       │   └── degradation.py # LapTime = α + β×TyreAge linear fit (scipy)
-│       └── visualization/     # (Milestone 5+) Plotly chart builders
+│       └── visualization/
+│           ├── race.py        # position evolution chart
+│           ├── strategy.py    # tyre strategy + degradation charts
+│           └── telemetry.py   # telemetry channel + time-delta charts
 │
 ├── tests/                     # pytest — analytical logic, not FastF1 itself
 ├── notebooks/exploration/     # scratch analysis, not shipped code
@@ -121,10 +130,22 @@ Implemented (Milestone 6):
   gear/DRS), with speed deltas, an approximate time-delta-over-the-lap, and
   gain/loss zone detection
 
+Implemented (Milestone 7):
+
+- [x] Full interactive Streamlit dashboard: an Overview page (session
+  selection + methodology summary) plus five analysis pages — Race Pace,
+  Tyres & Stints, Position & Pit Stops, Qualifying, and Telemetry — each
+  backed entirely by `f1analytics.analysis`/`visualization` functions
+- [x] Race position evolution chart (inverted position axis, SC/VSC/yellow
+  shading, pit-stop markers, per-driver selection)
+- [x] Tyre strategy chart (compound-colored stint bars across the grid)
+  and an interactive per-stint degradation scatter + fit line
+- [x] Distance-synchronized telemetry charts (per-channel comparison,
+  time-delta area chart, gain/loss zone table)
+
 Planned (see [Roadmap](#11-roadmap)):
 
-- [ ] Full two-driver comparison bringing pace + stints + telemetry together in one view
-- [ ] Interactive charts for all of the above (position evolution, stints, degradation, pit stops, telemetry) — currently data-only
+- [ ] A unified two-driver comparison view bringing pace + stints + telemetry together in one place (each is already viewable independently)
 
 ## 6. Installation
 
@@ -152,10 +173,20 @@ Launch the dashboard:
 streamlit run app/streamlit_app.py
 ```
 
-Then, in the browser tab that opens: pick a **season**, **Grand Prix**, and
-**session** in the sidebar, and click **Load session**. The first load for a
-given session downloads data from FastF1 and caches it under
-`data/fastf1_cache/`; subsequent loads of the same session are near-instant.
+Then, in the browser tab that opens: on the **Overview** page, pick a
+**season**, **Grand Prix**, and **session** in the sidebar, and click
+**Load session**. The first load for a given session downloads data from
+FastF1 and caches it under `data/fastf1_cache/`; subsequent loads of the
+same session are near-instant. Once loaded, use the page navigation
+(sidebar) to move between:
+
+- **Race Pace** — field ranking, Race Pace Index, two-driver comparison
+- **Tyres & Stints** — strategy chart across the grid, per-stint degradation
+- **Position & Pit Stops** — position evolution chart, pit-stop table
+- **Qualifying** — classification, Q1/Q2/Q3, teammate comparison (only for
+  Qualifying/Sprint Qualifying/Sprint Shootout sessions)
+- **Telemetry** — distance-synchronized comparison between two drivers'
+  fastest laps (loads on demand — heavier than the rest of the app)
 
 The cache location can be overridden with an environment variable, e.g. to
 share a cache across projects:
@@ -397,7 +428,7 @@ once the first milestone commit lands)* for what's shipped.
 4. ~~Tyres, stints and degradation model~~ ✅
 5. ~~Race position evolution and pit-stop analysis~~ ✅
 6. ~~Qualifying and telemetry analysis~~ ✅
-7. Streamlit UX and visualization refinement
+7. ~~Streamlit UX and visualization refinement~~ ✅
 8. Testing, documentation, and v1.0 release
 
 V1.0 is feature-complete when a user can select a historical Grand Prix,
@@ -409,12 +440,11 @@ this repository enters maintenance mode; strategy simulation is planned as a
 
 ## 12. Project status
 
-**Milestone 6 of 8 — qualifying and telemetry analysis.** Every analytical
-module described above is implemented and tested: session ingestion and
-caching, the clean-lap methodology, representative race pace, tyre stint
-reconstruction and degradation modelling, race position evolution and
-SC/VSC/yellow-flag detection, pit-stop reconstruction, qualifying
-classification (with Q1/Q2/Q3 progression and teammate comparison), and
-distance-synchronized telemetry comparison. Not yet ready for general use
-as an analytics tool — everything so far is a tested Python library with no
-interactive dashboard built on top of it yet; that's Milestone 7.
+**Milestone 7 of 8 — interactive dashboard complete.** Every analysis
+module is now reachable in the running Streamlit app: session Overview,
+Race Pace, Tyres & Stints, Position & Pit Stops, Qualifying, and
+Telemetry — each page a thin UI layer over the tested
+`f1analytics.analysis`/`visualization` modules. Everything described in the
+[Roadmap](#11-roadmap)'s v1.0 criteria is usable by someone cloning the
+repo today. What's left for v1.0 (Milestone 8): a final pass over the test
+suite and code for release quality, screenshots, and tagging.
