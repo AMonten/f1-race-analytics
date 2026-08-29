@@ -3,6 +3,44 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 5: Race position evolution and pit-stop analysis
+
+- `f1analytics.analysis.race`: `get_position_by_lap` pivots a session's
+  laps into a lap-number × driver position grid (the shape needed for the
+  future position-evolution chart); `get_track_status_periods` detects
+  contiguous lap ranges under each non-green FastF1 track-status code
+  (Yellow/Safety Car/VSC/Red), using the field-wide union of every
+  driver's `TrackStatus` per lap so a single driver's timing lag can't
+  hide an incident.
+- `f1analytics.analysis.pitstops`: `reconstruct_driver_pit_stops`/
+  `reconstruct_all_pit_stops` build `PitStop` records — stint/compound
+  transition, position before/after, the driver holding the adjacent
+  track position (context only, no causal claim about *why* position
+  changed), and an approximate pit-stop time-loss estimate:
+  `(in_lap_time + out_lap_time) - 2 × reference_pace`, where
+  `reference_pace` is the driver's own median clean lap of the stint that
+  just ended (reused from Milestone 4's `stints.py`). `None` rather than a
+  guess when the preceding stint has too few clean laps for a reliable
+  baseline, or the out-lap can't be found (e.g. retired in the pits).
+- New config constant: `TRACK_STATUS_LABELS` (human-readable names for all
+  7 FastF1 track-status codes).
+- Full methodology documented in both module docstrings and the README,
+  including the explicit limitation that the time-loss estimate combines
+  pit-lane transit and stationary time rather than separating them, and
+  cannot attribute *why* a stop was fast or slow.
+- Verified against real data (2023 Bahrain GP Race): both of VER's pit
+  stops estimated at ~23-24s time loss (matches Bahrain's known pit-lane
+  loss); the field-wide 50-stop time-loss distribution had a 23.9s median
+  with a plausible long tail (double-stacked/SC-affected stops); detected
+  incident periods (Yellow laps 1-2 and 39-41, VSC laps 40-42) line up
+  exactly with the statistical outlier laps flagged back in Milestone 2's
+  validation — closing the loop between the two milestones.
+- 13 new pytest tests (position grid pivoting/missing data, track-status
+  period detection — contiguous ranges, cross-driver union, all-green,
+  non-contiguous ranges — and pit-stop reconstruction: basic fields,
+  time-loss arithmetic, nearby-competitor lookups, missing out-lap,
+  no-stops case, field-wide aggregation).
+
 ## 2026-08-29 — Milestone 4: Tyres, stints and degradation model
 
 - `f1analytics.analysis.stints`: `reconstruct_driver_stints`/

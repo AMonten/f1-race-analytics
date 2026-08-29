@@ -42,6 +42,19 @@ SESSION_TYPE_LABELS: dict[str, str] = {
 # defensively even though FastF1's own docs say it has never been observed.
 NON_GREEN_TRACK_STATUS_CODES: frozenset[str] = frozenset({"2", "3", "4", "5", "6", "7"})
 
+# Human-readable labels for every FastF1 track-status code, including the
+# green-flag baseline ('1') — used when reporting incident periods (see
+# f1analytics.analysis.race.get_track_status_periods).
+TRACK_STATUS_LABELS: dict[str, str] = {
+    "1": "Track clear",
+    "2": "Yellow flag",
+    "3": "Unknown",
+    "4": "Safety Car",
+    "5": "Red flag",
+    "6": "Virtual Safety Car deployed",
+    "7": "Virtual Safety Car ending",
+}
+
 # A lap's time is flagged as a statistical outlier if it deviates from its
 # driver/stint group's median by more than this many scaled MADs (Median
 # Absolute Deviations). 1.4826 * MAD approximates a normal distribution's

@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%204%20%E2%80%94%20tyres%20%26%20degradation-yellow)
+![Status](https://img.shields.io/badge/status-Milestone%205%20%E2%80%94%20race%20evolution-yellow)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -59,7 +59,9 @@ f1-race-analytics/
 │       │   ├── pace.py        # representative race pace, driver comparison
 │       │   ├── stints.py      # tyre stint reconstruction
 │       │   ├── tyres.py       # per-stint/field tyre degradation fitting
-│       │   └── ...            # pit stops, qualifying, telemetry (later milestones)
+│       │   ├── race.py        # lap-by-driver position grid, SC/VSC periods
+│       │   ├── pitstops.py    # pit-stop reconstruction, approx. time loss
+│       │   └── ...            # qualifying, telemetry (later milestones)
 │       ├── models/
 │       │   └── degradation.py # LapTime = α + β×TyreAge linear fit (scipy)
 │       └── visualization/     # (Milestone 5+) Plotly chart builders
@@ -103,13 +105,19 @@ Implemented (Milestone 4):
 - [x] Tyre degradation model: `LapTime = α + β × TyreAge`, fit per
   driver/stint with sample size, R², p-value and low-sample warnings
 
+Implemented (Milestone 5):
+
+- [x] Race position evolution data (lap-by-driver position grid) and
+  Safety Car / Virtual Safety Car / yellow-flag period detection
+- [x] Pit-stop reconstruction: stint transition, position before/after,
+  nearby competitors, and approximate pit-stop time loss
+
 Planned (see [Roadmap](#11-roadmap)):
 
-- [ ] Race position evolution with pit-stop and SC/VSC markers
 - [ ] Full two-driver comparison (strategy, stints, telemetry — pace comparison already implemented)
-- [ ] Pit-stop timing and approximate time-loss analysis
 - [ ] Qualifying analysis (Q1/Q2/Q3, sector times, lap comparison)
 - [ ] Distance-synchronized telemetry comparison
+- [ ] Interactive charts for all of the above (position evolution, stints, degradation, pit stops) — currently data-only
 
 ## 6. Installation
 
@@ -178,6 +186,17 @@ from f1analytics.analysis.tyres import compute_field_degradation
 
 stints = reconstruct_all_stints(flagged)          # one row per (driver, stint)
 degradation = compute_field_degradation(flagged)  # one row per (driver, stint), with slope/R²/warnings
+```
+
+Or reconstruct position evolution and pit stops:
+
+```python
+from f1analytics.analysis.race import get_position_by_lap, get_track_status_periods
+from f1analytics.analysis.pitstops import reconstruct_all_pit_stops
+
+position_grid = get_position_by_lap(flagged)        # lap number x driver -> classification position
+incidents = get_track_status_periods(flagged)       # Yellow/SC/VSC/Red lap ranges
+pit_stops = reconstruct_all_pit_stops(flagged)       # one row per stop, with estimated time loss
 ```
 
 Run the test suite:
@@ -264,8 +283,29 @@ from the code that implements it:
   `f1analytics.models.degradation` for the full docstring and
   `f1analytics.analysis.tyres` for the driver/stint/field-level wrappers.
 
-- **Pit-stop time-loss estimation** — to be documented here as Milestone 5
-  is implemented.
+- **Race position evolution / track-status periods** — the position grid
+  is a direct pivot of FastF1's per-lap `Position` column (no derived
+  statistics). Track-status incident periods (Yellow flag, Safety Car,
+  Virtual Safety Car, Red flag) are detected using the *field-wide union*
+  of every driver's `TrackStatus` string per lap (more robust than trusting
+  a single driver's record, since timing can lag slightly around a status
+  change) — the same status codes used by the clean-lap methodology. See
+  `f1analytics.analysis.race`.
+
+- **Pit-stop time-loss estimation** —
+  `estimated_time_loss_s = (in_lap_time_s + out_lap_time_s) - 2 × reference_pace_s`,
+  where `reference_pace_s` is the driver's own median *clean* lap time from
+  the stint that just ended (not a field-wide baseline, so it reflects that
+  driver's specific fuel load and tyre wear at that point in the race).
+  This is a combined estimate of pit-lane transit **and** stationary time —
+  it does not separate the two, and the estimate is `None` (not guessed)
+  when the preceding stint had too few clean laps to establish a reliable
+  baseline. Pit stops also report position before/after and whichever
+  driver held the adjacent track position at that lap, purely as context:
+  **a position change around a pit stop is not attributed to the stop
+  itself** — it may reflect strategy (undercut/overcut), a rival's own
+  stop, or an unrelated incident, and this project does not claim to know
+  which. See `f1analytics.analysis.pitstops` for the full docstring.
 
 ## 9. Data source
 
@@ -297,7 +337,7 @@ once the first milestone commit lands)* for what's shipped.
 2. ~~Lap preprocessing and clean-lap methodology~~ ✅
 3. ~~Race pace and driver comparison~~ ✅
 4. ~~Tyres, stints and degradation model~~ ✅
-5. Race position evolution and pit-stop analysis
+5. ~~Race position evolution and pit-stop analysis~~ ✅
 6. Qualifying and telemetry analysis
 7. Streamlit UX and visualization refinement
 8. Testing, documentation, and v1.0 release
@@ -311,9 +351,11 @@ this repository enters maintenance mode; strategy simulation is planned as a
 
 ## 12. Project status
 
-**Milestone 4 of 8 — tyres, stints and degradation.** Project structure,
-FastF1 ingestion, caching, session selection, the clean-lap methodology,
-representative race pace, tyre stint reconstruction, and the linear tyre
-degradation model are implemented and tested. Not yet ready for general use
-as an analytics tool — pit-stop, qualifying, and telemetry analysis, and the
-interactive dashboard sections for all of the above, are still to come.
+**Milestone 5 of 8 — race position evolution and pit-stop analysis.**
+Project structure, FastF1 ingestion, caching, session selection, the
+clean-lap methodology, representative race pace, tyre stint reconstruction
+and degradation modelling, race position evolution data, SC/VSC/yellow-flag
+period detection, and pit-stop reconstruction (with approximate time-loss
+estimation) are implemented and tested. Not yet ready for general use as an
+analytics tool — qualifying and telemetry analysis, and the interactive
+dashboard sections for everything built so far, are still to come.
