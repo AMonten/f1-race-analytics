@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# FastF1 cache and any downloaded session data — regenerated on demand, must not be committed
+data/*
+!data/.gitkeep
+.fastf1_cache/
+
+# Notebooks checkpoints
+notebooks/**/.ipynb_checkpoints/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+
+# Env files
+.env
