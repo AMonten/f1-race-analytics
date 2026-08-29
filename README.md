@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%205%20%E2%80%94%20race%20evolution-yellow)
+![Status](https://img.shields.io/badge/status-Milestone%206%20%E2%80%94%20qualifying%20%26%20telemetry-yellow)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -61,7 +61,8 @@ f1-race-analytics/
 │       │   ├── tyres.py       # per-stint/field tyre degradation fitting
 │       │   ├── race.py        # lap-by-driver position grid, SC/VSC periods
 │       │   ├── pitstops.py    # pit-stop reconstruction, approx. time loss
-│       │   └── ...            # qualifying, telemetry (later milestones)
+│       │   ├── qualifying.py  # classification, Q1/Q2/Q3, teammate/lap comparison
+│       │   └── telemetry.py   # distance-synchronized telemetry comparison
 │       ├── models/
 │       │   └── degradation.py # LapTime = α + β×TyreAge linear fit (scipy)
 │       └── visualization/     # (Milestone 5+) Plotly chart builders
@@ -112,12 +113,18 @@ Implemented (Milestone 5):
 - [x] Pit-stop reconstruction: stint transition, position before/after,
   nearby competitors, and approximate pit-stop time loss
 
+Implemented (Milestone 6):
+
+- [x] Qualifying classification with gap to pole, sector times, Q1/Q2/Q3
+  progression, teammate comparison, and detailed two-lap comparison
+- [x] Distance-synchronized telemetry comparison (speed/throttle/brake/RPM/
+  gear/DRS), with speed deltas, an approximate time-delta-over-the-lap, and
+  gain/loss zone detection
+
 Planned (see [Roadmap](#11-roadmap)):
 
-- [ ] Full two-driver comparison (strategy, stints, telemetry — pace comparison already implemented)
-- [ ] Qualifying analysis (Q1/Q2/Q3, sector times, lap comparison)
-- [ ] Distance-synchronized telemetry comparison
-- [ ] Interactive charts for all of the above (position evolution, stints, degradation, pit stops) — currently data-only
+- [ ] Full two-driver comparison bringing pace + stints + telemetry together in one view
+- [ ] Interactive charts for all of the above (position evolution, stints, degradation, pit stops, telemetry) — currently data-only
 
 ## 6. Installation
 
@@ -197,6 +204,26 @@ from f1analytics.analysis.pitstops import reconstruct_all_pit_stops
 position_grid = get_position_by_lap(flagged)        # lap number x driver -> classification position
 incidents = get_track_status_periods(flagged)       # Yellow/SC/VSC/Red lap ranges
 pit_stops = reconstruct_all_pit_stops(flagged)       # one row per stop, with estimated time loss
+```
+
+Or analyze a qualifying session and compare telemetry between two laps:
+
+```python
+from f1analytics.analysis.qualifying import compute_qualifying_classification, compare_teammates
+from f1analytics.analysis.telemetry import compare_lap_telemetry, identify_gain_loss_zones
+
+quali_session = loader.load_session(2023, "Bahrain", "Qualifying")
+quali_flagged = add_lap_quality_flags(quali_session.laps)
+quali_flagged["QualifyingSegment"] = loader.get_qualifying_segment_labels(quali_session)
+
+classification = compute_qualifying_classification(quali_flagged)  # gap to pole, sector times
+teammates = compare_teammates(quali_flagged)
+
+telemetry_session = loader.load_session(2023, "Bahrain", "Qualifying", telemetry=True)
+tel_a = loader.get_driver_fastest_lap_telemetry(telemetry_session, "VER")
+tel_b = loader.get_driver_fastest_lap_telemetry(telemetry_session, "PER")
+comparison = compare_lap_telemetry(tel_a, tel_b, driver_a="VER", driver_b="PER")
+zones = identify_gain_loss_zones(comparison.synced)  # where VER gains/loses time on PER
 ```
 
 Run the test suite:
@@ -307,6 +334,37 @@ from the code that implements it:
   stop, or an unrelated incident, and this project does not claim to know
   which. See `f1analytics.analysis.pitstops` for the full docstring.
 
+- **Qualifying classification** — uses a deliberately different "valid
+  lap" filter than race pace: timed, not a pit lap, not deleted, and
+  FastF1-accurate — but, unlike the race clean-lap methodology, an
+  unusually **fast** lap is never excluded as a statistical outlier
+  (setting an exceptional lap is the entire point of qualifying). Q1/Q2/Q3
+  splitting uses FastF1's own `Laps.split_qualifying_sessions()` (which
+  needs session-timing context beyond the lap table itself, so it lives in
+  `f1analytics.data.loader.get_qualifying_segment_labels`, the one
+  fastf1-touching exception to this analysis module). Teammate comparison
+  only pairs teams with exactly two drivers present — a mid-season
+  replacement or data gap is skipped rather than guessed at. See
+  `f1analytics.analysis.qualifying`.
+
+- **Telemetry comparison** — two laps are never sampled at the same points
+  on track, so both are linearly interpolated onto a shared, evenly-spaced
+  distance grid (5m steps by default) covering only their *overlapping*
+  recorded range — nothing is extrapolated beyond either lap's real data,
+  and no channel is fabricated beyond what FastF1 provides. From this:
+  `SpeedDelta` at every point, and (when both laps have a time channel) an
+  approximate `TimeDelta_s` — each driver's own elapsed lap time
+  interpolated onto the same distance points, so their difference
+  approximates the time gap at each point on track. This is explicitly an
+  **approximation**, not the true lap-time difference: it only covers the
+  overlapping distance range, and each lap is independently resampled.
+  Gain/loss zones are a simple sign-of-slope read of that time delta (with
+  a small noise threshold to avoid fragmenting on sample-to-sample
+  telemetry noise) — a purely descriptive summary that does **not**
+  attribute *why* time was gained or lost. See
+  `f1analytics.analysis.telemetry` for the full docstring and exact sign
+  conventions.
+
 ## 9. Data source
 
 All F1 session data is retrieved through [FastF1](https://docs.fastf1.dev/),
@@ -338,7 +396,7 @@ once the first milestone commit lands)* for what's shipped.
 3. ~~Race pace and driver comparison~~ ✅
 4. ~~Tyres, stints and degradation model~~ ✅
 5. ~~Race position evolution and pit-stop analysis~~ ✅
-6. Qualifying and telemetry analysis
+6. ~~Qualifying and telemetry analysis~~ ✅
 7. Streamlit UX and visualization refinement
 8. Testing, documentation, and v1.0 release
 
@@ -351,11 +409,12 @@ this repository enters maintenance mode; strategy simulation is planned as a
 
 ## 12. Project status
 
-**Milestone 5 of 8 — race position evolution and pit-stop analysis.**
-Project structure, FastF1 ingestion, caching, session selection, the
-clean-lap methodology, representative race pace, tyre stint reconstruction
-and degradation modelling, race position evolution data, SC/VSC/yellow-flag
-period detection, and pit-stop reconstruction (with approximate time-loss
-estimation) are implemented and tested. Not yet ready for general use as an
-analytics tool — qualifying and telemetry analysis, and the interactive
-dashboard sections for everything built so far, are still to come.
+**Milestone 6 of 8 — qualifying and telemetry analysis.** Every analytical
+module described above is implemented and tested: session ingestion and
+caching, the clean-lap methodology, representative race pace, tyre stint
+reconstruction and degradation modelling, race position evolution and
+SC/VSC/yellow-flag detection, pit-stop reconstruction, qualifying
+classification (with Q1/Q2/Q3 progression and teammate comparison), and
+distance-synchronized telemetry comparison. Not yet ready for general use
+as an analytics tool — everything so far is a tested Python library with no
+interactive dashboard built on top of it yet; that's Milestone 7.

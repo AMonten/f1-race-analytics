@@ -3,6 +3,46 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 6: Qualifying and telemetry analysis
+
+- `f1analytics.data.loader`: `get_qualifying_segment_labels` (wraps
+  FastF1's `Laps.split_qualifying_sessions()`, which needs session-timing
+  context beyond the lap table — the one FastF1-touching helper qualifying
+  analysis depends on), `get_lap_telemetry` (car data + computed `Distance`,
+  as a plain DataFrame; `Time` converted to float `TimeSeconds`), and
+  `get_driver_fastest_lap_telemetry` convenience wrapper.
+- `f1analytics.analysis.qualifying`: `is_valid_qualifying_lap` (timed, not
+  pit/deleted, FastF1-accurate — deliberately does NOT exclude fast
+  statistical outliers, unlike the race clean-lap methodology, since
+  setting an exceptional lap is the point of qualifying),
+  `compute_qualifying_classification` (gap to pole, sector times, sorted),
+  `get_segment_progression` (Q1/Q2/Q3), `compare_teammates` (only pairs
+  teams with exactly two drivers present), and `compare_two_laps` (sector
+  and lap-time deltas between any two laps).
+- `f1analytics.analysis.telemetry`: `synchronize_by_distance` (interpolates
+  two laps' telemetry onto a shared evenly-spaced distance grid, covering
+  only their recorded overlap — nothing extrapolated or fabricated),
+  `compare_lap_telemetry` (adds `SpeedDelta` and an approximate
+  `TimeDelta_s`/`time_delta_at_finish_s`, with documented sign conventions
+  and explicit "this is approximate, not the true lap-time difference"
+  caveat), and `identify_gain_loss_zones` (sign-of-slope read of the time
+  delta, noise-thresholded, explicitly described as descriptive only — no
+  causal attribution of *why* time was gained or lost).
+- Full methodology documented in both module docstrings and the README.
+- Verified against real data (2023 Bahrain GP Qualifying): reconstructed
+  classification exactly matches the actual historical result (VER pole
+  1:29.708, PER +0.138s, LEC +0.292s, SAI +0.446s, ALO/RUS ~+0.63s);
+  VER-vs-PER telemetry comparison gave an approximate time delta (-0.244s)
+  consistent with their real 0.138s qualifying gap, within the expected
+  approximation error from only covering the two laps' overlapping
+  distance range.
+- 21 new pytest tests (qualifying: valid-lap filtering including the
+  fast-outlier-not-excluded case, best-lap lookup, classification sorting/
+  gap-to-pole/sector times, segment progression, teammate pairing,
+  two-lap comparison; telemetry: distance synchronization and its overlap/
+  no-common-channel error cases, speed and time delta sign conventions,
+  gain/loss zone detection and its edge cases).
+
 ## 2026-08-29 — Milestone 5: Race position evolution and pit-stop analysis
 
 - `f1analytics.analysis.race`: `get_position_by_lap` pivots a session's

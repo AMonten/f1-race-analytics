@@ -133,6 +133,84 @@ def load_session(
     return session
 
 
+def get_qualifying_segment_labels(session: fastf1.core.Session) -> pd.Series:
+    """Return a Series (indexed like `session.laps`) labelling each lap 'Q1'/'Q2'/'Q3'.
+
+    Wraps FastF1's `Laps.split_qualifying_sessions()`, which needs
+    session-level timing context (`session.session_status`) beyond what's
+    in the lap table itself — this is why the split happens here, in the
+    data layer, rather than in `f1analytics.analysis.qualifying`. Merge the
+    result into a laps DataFrame (e.g.
+    `laps["QualifyingSegment"] = get_qualifying_segment_labels(session)`)
+    before calling the qualifying analysis functions.
+
+    Args:
+        session: A loaded qualifying-like session (Qualifying, Sprint
+            Qualifying/Shootout).
+
+    Returns:
+        A Series of 'Q1'/'Q2'/'Q3'/`None`. A segment is `None` throughout
+        if it was cancelled (e.g. a red-flagged Q3) — this is a real gap in
+        the data, not something to fill in.
+
+    Raises:
+        SessionLoadError: If `session` is not a qualifying-like session, or
+            session status data isn't available.
+    """
+    try:
+        segments = session.laps.split_qualifying_sessions()
+    except ValueError as exc:
+        raise SessionLoadError(f"Could not split qualifying segments: {exc}") from exc
+
+    labels = pd.Series(index=session.laps.index, dtype=object)
+    for label, segment_laps in zip(("Q1", "Q2", "Q3"), segments):
+        if segment_laps is not None:
+            labels.loc[segment_laps.index] = label
+    return labels
+
+
+def get_lap_telemetry(lap: fastf1.core.Lap) -> pd.DataFrame:
+    """Return one lap's car telemetry against distance, as a plain DataFrame.
+
+    Uses `Lap.get_car_data()` + `add_distance()` rather than the merged
+    `Lap.get_telemetry()`, since only car-channel data is needed (no GPS
+    position) — this is faster and, per FastF1's own documentation, more
+    accurate than the merged method when position data isn't required.
+
+    Requires the session to have been loaded with `telemetry=True` (see
+    `load_session`). No channel is derived or fabricated beyond what
+    FastF1 provides; `TimeSeconds` is simply `Time` (lap-relative elapsed
+    time) converted from `Timedelta` to `float` seconds for easier
+    downstream arithmetic.
+
+    Returns:
+        A DataFrame with whichever of `Distance`, `TimeSeconds`, `Speed`,
+        `Throttle`, `Brake`, `RPM`, `nGear`, `DRS` FastF1 provides.
+    """
+    car_data = lap.get_car_data().add_distance()
+
+    result = pd.DataFrame({"Distance": car_data["Distance"]})
+    if "Time" in car_data.columns:
+        result["TimeSeconds"] = car_data["Time"].dt.total_seconds()
+    for column in ("Speed", "Throttle", "Brake", "RPM", "nGear", "DRS"):
+        if column in car_data.columns:
+            result[column] = car_data[column]
+    return result
+
+
+def get_driver_fastest_lap_telemetry(session: fastf1.core.Session, driver: str) -> pd.DataFrame:
+    """Convenience: telemetry for `driver`'s fastest personal-best-marked lap.
+
+    Raises:
+        SessionLoadError: If the driver has no valid (personal-best-marked)
+            lap in this session.
+    """
+    lap = session.laps.pick_drivers(driver).pick_fastest()
+    if lap is None:
+        raise SessionLoadError(f"No valid fastest lap found for driver {driver!r}")
+    return get_lap_telemetry(lap)
+
+
 def summarize_session(session: fastf1.core.Session) -> SessionOverview:
     """Build a `SessionOverview` from a loaded session's metadata, results and weather.
 
