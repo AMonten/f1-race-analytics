@@ -28,6 +28,16 @@ def _flagged_laps():
     return pd.DataFrame(rows)
 
 
+def test_compute_driver_race_pace_field_median_none_when_no_one_has_clean_laps():
+    laps = pd.DataFrame([_lap("VER", "Red Bull Racing", 110.0, clean=False), _lap("HAM", "Mercedes", 120.0, clean=False)])
+
+    pace = compute_driver_race_pace(laps, "VER")
+
+    assert pace.field_median_s is None
+    assert pace.race_pace_index is None
+    assert pace.delta_to_field_median_s is None
+
+
 def test_compute_driver_race_pace_basic_stats():
     pace = compute_driver_race_pace(_flagged_laps(), "VER")
 

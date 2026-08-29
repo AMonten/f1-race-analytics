@@ -136,6 +136,12 @@ def test_get_segment_progression_requires_segment_column():
         get_segment_progression(laps)
 
 
+def test_get_segment_progression_empty_when_no_segment_has_data():
+    laps = _basic_session()
+    laps["QualifyingSegment"] = None
+    assert get_segment_progression(laps).empty
+
+
 def test_compare_teammates_only_pairs_of_two():
     laps = _basic_session()
     comparison = compare_teammates(laps)

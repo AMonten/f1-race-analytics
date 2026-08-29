@@ -5,7 +5,12 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from f1analytics.analysis.laps import UnknownDriverError, fastest_lap, get_clean_driver_laps, get_driver_laps
+from f1analytics.analysis.laps import (
+    UnknownDriverError,
+    fastest_lap,
+    get_clean_driver_laps,
+    get_driver_laps,
+)
 
 
 def _flagged_laps():

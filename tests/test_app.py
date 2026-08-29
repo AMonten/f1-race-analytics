@@ -18,13 +18,13 @@ APP_DIR = Path(__file__).resolve().parents[1] / "app"
 if str(APP_DIR) not in sys.path:
     sys.path.insert(0, str(APP_DIR))
 
-import pandas as pd
-import pytest
-from streamlit.testing.v1 import AppTest
+import pandas as pd  # noqa: E402 - must follow the sys.path insert above
+import pytest  # noqa: E402
+import state as app_state  # noqa: E402
+from streamlit.testing.v1 import AppTest  # noqa: E402
 
-import state as app_state
-from f1analytics.data import loader as data_loader
-from f1analytics.data.preprocessing import add_lap_quality_flags
+from f1analytics.data import loader as data_loader  # noqa: E402
+from f1analytics.data.preprocessing import add_lap_quality_flags  # noqa: E402
 
 PAGES_DIR = APP_DIR / "pages"
 DUMMY_SELECTION = (2023, 1, "Race")

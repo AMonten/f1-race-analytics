@@ -56,7 +56,10 @@ def build_position_evolution_chart(
     fig = go.Figure()
 
     if track_status_periods is not None:
-        for _, period in track_status_periods.iterrows():
+        # Overlapping periods (e.g. a Yellow flag immediately followed by a
+        # VSC covering nearly the same laps) get their annotations staggered
+        # vertically in paper coordinates so the labels don't overlap.
+        for i, (_, period) in enumerate(track_status_periods.iterrows()):
             color = STATUS_BAND_COLORS.get(str(period["status_code"]))
             if color is None:
                 continue
@@ -67,8 +70,12 @@ def build_position_evolution_chart(
                 line_width=0,
                 layer="below",
                 annotation_text=period["status_label"],
-                annotation_position="top left",
                 annotation_font_size=9,
+                annotation_xanchor="left",
+                annotation_yanchor="top",
+                annotation_yref="paper",
+                annotation_y=0.99 - 0.08 * (i % 5),
+                annotation_showarrow=False,
             )
 
     for i, driver in enumerate(drivers):

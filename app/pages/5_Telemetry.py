@@ -18,7 +18,10 @@ from state import FAVICON_PATH, get_flagged_laps, get_selection, render_branding
 
 from f1analytics.analysis.telemetry import compare_lap_telemetry, identify_gain_loss_zones
 from f1analytics.data import loader as data_loader
-from f1analytics.visualization.telemetry import build_telemetry_channels_chart, build_time_delta_chart
+from f1analytics.visualization.telemetry import (
+    build_telemetry_channels_chart,
+    build_time_delta_chart,
+)
 
 st.set_page_config(page_title="Telemetry — F1 Race Analytics", page_icon=str(FAVICON_PATH), layout="wide")
 render_branding()

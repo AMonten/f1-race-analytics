@@ -26,6 +26,64 @@ class SessionLoadError(RuntimeError):
     """Raised when a requested season/event/session cannot be loaded from FastF1."""
 
 
+# Curated subset of FastF1's session.results columns for display purposes —
+# excludes internal/redundant fields (DriverId, TeamColor, TeamId, HeadshotUrl,
+# CountryCode, FirstName/LastName which duplicate Abbreviation/FullName).
+RESULTS_DISPLAY_COLUMNS = (
+    "Position",
+    "Abbreviation",
+    "TeamName",
+    "GridPosition",
+    "Q1",
+    "Q2",
+    "Q3",
+    "Time",
+    "Status",
+    "Points",
+    "Laps",
+)
+
+# Columns only meaningful for qualifying-like sessions — dropped from the
+# display if entirely empty (e.g. Q1/Q2/Q3 on a race's results).
+_DROP_IF_ENTIRELY_EMPTY = ("Q1", "Q2", "Q3")
+
+
+def _format_results_for_display(results: pd.DataFrame) -> pd.DataFrame:
+    """Curate columns and format `Time` for the Overview page's results table.
+
+    `Time` is a `Timedelta` in FastF1's results: the winner's/pole-sitter's
+    absolute time, and every other row's gap to them. Left as a raw
+    `Timedelta`, Streamlit's default renderer shows a vague relative string
+    ("a minute") instead of the actual gap, so it's formatted here as
+    `H:MM:SS.mmm` for the fastest row and `+SS.SSSs` for everyone else.
+    """
+    display_columns = [c for c in RESULTS_DISPLAY_COLUMNS if c in results.columns]
+    display_columns = [
+        c
+        for c in display_columns
+        if c not in _DROP_IF_ENTIRELY_EMPTY or results[c].notna().any()
+    ]
+    results = results[display_columns].copy() if display_columns else results.copy()
+
+    if "Time" in results.columns and "Position" in results.columns:
+        best_position = results["Position"].min()
+
+        def _format_time(row: pd.Series) -> str | None:
+            time = row["Time"]
+            if pd.isna(time):
+                return None
+            total_seconds = time.total_seconds()
+            if row["Position"] == best_position:
+                hours, remainder = divmod(total_seconds, 3600)
+                minutes, seconds = divmod(remainder, 60)
+                return f"{int(hours)}:{int(minutes):02d}:{seconds:06.3f}"
+            return f"+{total_seconds:.3f}s"
+
+        results["Time"] = results.apply(_format_time, axis=1)
+
+    return results
+
+
 @dataclass
 class SessionOverview:
     """Lightweight, display-ready summary of a loaded session.
@@ -163,7 +221,7 @@ def get_qualifying_segment_labels(session: fastf1.core.Session) -> pd.Series:
         raise SessionLoadError(f"Could not split qualifying segments: {exc}") from exc
 
     labels = pd.Series(index=session.laps.index, dtype=object)
-    for label, segment_laps in zip(("Q1", "Q2", "Q3"), segments):
+    for label, segment_laps in zip(("Q1", "Q2", "Q3"), segments, strict=True):
         if segment_laps is not None:
             labels.loc[segment_laps.index] = label
     return labels
@@ -234,6 +292,7 @@ def summarize_session(session: fastf1.core.Session) -> SessionOverview:
             drivers = sorted(results["Abbreviation"].dropna().unique().tolist())
         if "TeamName" in results.columns:
             teams = sorted(results["TeamName"].dropna().unique().tolist())
+        results = _format_results_for_display(results)
     elif session.laps is not None and not session.laps.empty and "Driver" in session.laps.columns:
         drivers = sorted(session.laps["Driver"].dropna().unique().tolist())
 

@@ -6,7 +6,8 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%207%20%E2%80%94%20dashboard-yellow)
+![Status](https://img.shields.io/badge/status-v1.0.0-brightgreen)
+![Tests](https://img.shields.io/badge/tests-117%20passing-brightgreen)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -39,7 +40,31 @@ can be trusted and extended.
 
 ## 3. Screenshots
 
-_Screenshots will be added at the v1.0 tag (Milestone 8) once the UI is in its final polished state — the dashboard itself is fully functional as of Milestone 7 (`streamlit run app/streamlit_app.py`)._
+All screenshots below are from a real, cached 2023 Bahrain Grand Prix session — nothing is mocked.
+
+**Overview** — session metadata, weather, and results/classification.
+
+![Overview page](assets/screenshots/overview.png)
+
+**Race Pace** — field ranking by Race Pace Index, with the two-driver comparison below it.
+
+![Race Pace page](assets/screenshots/race_pace.png)
+
+**Tyres & Stints** — strategy across the grid, with per-stint degradation on request.
+
+![Tyres and Stints page](assets/screenshots/tyres_and_stints.png)
+
+**Position & Pit Stops** — position evolution with Yellow/VSC shading and pit-stop markers.
+
+![Position and Pit Stops page](assets/screenshots/position_and_pitstops.png)
+
+**Qualifying** — classification, gap to pole, and Q1/Q2/Q3 progression.
+
+![Qualifying page](assets/screenshots/qualifying.png)
+
+**Telemetry** — distance-synchronized channel comparison between two drivers' fastest laps.
+
+![Telemetry page](assets/screenshots/telemetry.png)
 
 ## 4. Architecture
 
@@ -148,7 +173,14 @@ Implemented (Milestone 7):
 - [x] Distance-synchronized telemetry charts (per-channel comparison,
   time-delta area chart, gain/loss zone table)
 
-Planned (see [Roadmap](#11-roadmap)):
+Shipped in v1.0.0 (Milestone 8):
+
+- [x] 99% test coverage (117 tests), a `ruff` lint configuration with a
+  clean run, curated/formatted results tables, and real screenshots of
+  every page (see [Screenshots](#3-screenshots))
+
+Ideas for later (see [Roadmap](#11-roadmap) — the project is in
+maintenance mode, so these are not committed to):
 
 - [ ] A unified two-driver comparison view bringing pace + stints + telemetry together in one place (each is already viewable independently)
 
@@ -424,8 +456,8 @@ data silently.
 
 ## 11. Roadmap
 
-Development proceeds in milestones; see [`CHANGELOG.md`](CHANGELOG.md) *(added
-once the first milestone commit lands)* for what's shipped.
+Development proceeded in milestones; see [`CHANGELOG.md`](CHANGELOG.md) for
+the full dated history of what shipped in each one.
 
 1. ~~Project structure, FastF1 ingestion, caching, session selection~~ ✅
 2. ~~Lap preprocessing and clean-lap methodology~~ ✅
@@ -434,22 +466,24 @@ once the first milestone commit lands)* for what's shipped.
 5. ~~Race position evolution and pit-stop analysis~~ ✅
 6. ~~Qualifying and telemetry analysis~~ ✅
 7. ~~Streamlit UX and visualization refinement~~ ✅
-8. Testing, documentation, and v1.0 release
+8. ~~Testing, documentation, and v1.0 release~~ ✅
 
-V1.0 is feature-complete when a user can select a historical Grand Prix,
+**v1.0.0 is released.** A user can select a historical Grand Prix,
 reconstruct its position evolution, inspect tyre strategy, compare two
 drivers, calculate race pace, inspect stint degradation, compare telemetry,
-and analyze qualifying — all backed by documented methodology. After v1.0,
-this repository enters maintenance mode; strategy simulation is planned as a
-**separate** future project rather than an ever-expanding addition to this one.
+and analyze qualifying — all backed by documented methodology, in the
+running dashboard. This repository now enters maintenance mode (bug fixes
+and dependency updates only); strategy simulation is planned as a
+**separate** future project rather than an ever-expanding addition to this
+one.
 
 ## 12. Project status
 
-**Milestone 7 of 8 — interactive dashboard complete.** Every analysis
-module is now reachable in the running Streamlit app: session Overview,
-Race Pace, Tyres & Stints, Position & Pit Stops, Qualifying, and
-Telemetry — each page a thin UI layer over the tested
-`f1analytics.analysis`/`visualization` modules. Everything described in the
-[Roadmap](#11-roadmap)'s v1.0 criteria is usable by someone cloning the
-repo today. What's left for v1.0 (Milestone 8): a final pass over the test
-suite and code for release quality, screenshots, and tagging.
+**v1.0.0 — released, in maintenance mode.** Every application section from
+the original spec is implemented, tested (117 tests, 99% coverage), and
+reachable in the running Streamlit app: session Overview, Race Pace, Tyres
+& Stints, Position & Pit Stops, Qualifying, and Telemetry — each page a
+thin UI layer over the tested `f1analytics.analysis`/`visualization`
+modules, with every derived metric's methodology documented above. Future
+work on this repo is limited to bug fixes and dependency updates; new
+functionality (e.g. strategy simulation) will live in a separate project.

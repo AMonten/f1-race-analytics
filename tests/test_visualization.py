@@ -15,7 +15,10 @@ import pytest
 from f1analytics.models.degradation import DegradationFit
 from f1analytics.visualization.race import build_position_evolution_chart
 from f1analytics.visualization.strategy import build_degradation_chart, build_strategy_chart
-from f1analytics.visualization.telemetry import build_telemetry_channels_chart, build_time_delta_chart
+from f1analytics.visualization.telemetry import (
+    build_telemetry_channels_chart,
+    build_time_delta_chart,
+)
 
 
 def test_build_position_evolution_chart_one_trace_per_driver():

@@ -62,7 +62,7 @@ def _render_session_picker() -> None:
         st.sidebar.error(str(exc))
         return
 
-    event_options = dict(zip(schedule["EventName"], schedule["RoundNumber"]))
+    event_options = dict(zip(schedule["EventName"], schedule["RoundNumber"], strict=True))
     event_names = list(event_options.keys())
     default_event_index = 0
     if current:

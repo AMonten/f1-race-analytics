@@ -57,6 +57,19 @@ def test_pit_in_and_out_laps_are_excluded():
     assert flagged.loc[1, "IsCleanLap"]
 
 
+def test_missing_track_status_is_treated_as_not_clean():
+    laps = _laps_df(
+        [
+            _lap(lap_number=1, track_status=float("nan"), seconds=90.0),
+            _lap(lap_number=2, track_status="", seconds=90.0),
+        ]
+    )
+    flagged = add_lap_quality_flags(laps)
+
+    assert not flagged.loc[0, "IsTrackStatusClean"]
+    assert not flagged.loc[1, "IsTrackStatusClean"]
+
+
 def test_non_green_track_status_excludes_lap_even_if_only_partially_affected():
     laps = _laps_df(
         [

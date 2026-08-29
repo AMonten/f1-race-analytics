@@ -3,6 +3,46 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 8: v1.0.0 release
+
+- **Testing**: extended coverage of `f1analytics.data.loader`'s own logic
+  (exception wrapping into `SessionLoadError`, session-name filtering,
+  qualifying-segment label assignment, telemetry column selection) from
+  54% to 97%, using fake FastF1 objects — no real network calls added.
+  Added a few remaining edge-case tests elsewhere (all-clean-laps-empty
+  field median, missing/empty `TrackStatus`, no-segment-data qualifying
+  progression). Project-wide coverage: 99% (671 statements, 10 missed, all
+  in code paths that require a real FastF1 response). 117 tests total.
+- **Linting**: added a `ruff` configuration (`E4`, `E7`, `E9`, `F`, `I`,
+  `UP`, `B`) and fixed everything it found — import ordering across the
+  whole codebase, missing `strict=` on three `zip()` calls, and one
+  necessary `# noqa: E402` cluster for the sys.path-before-import pattern
+  in `tests/test_app.py`.
+- **UI polish**:
+  - Overview's results/classification table now shows a curated column
+    subset (dropping FastF1's internal `DriverId`/`TeamColor`/`TeamId`/
+    `HeadshotUrl`/etc.) and formats the `Time` column as the actual gap
+    (`+11.987s`) or winner's total time (`1:33:56.736`) instead of
+    Streamlit's default vague relative string ("a minute"). Qualifying-only
+    `Q1`/`Q2`/`Q3` columns are dropped when entirely empty (e.g. on a race).
+  - Race position evolution chart: overlapping Yellow/SC/VSC period
+    annotations (e.g. a Yellow flag immediately followed by a VSC covering
+    nearly the same laps) are now staggered vertically instead of
+    overlapping illegibly.
+- **Branding**: logo banner in the README; consistent favicon and a
+  sidebar logo (`app/state.render_branding()`, wide when expanded, square
+  icon when collapsed) across all six pages.
+- **Screenshots**: added real screenshots (not mocked) of all six pages,
+  captured from a live run against the cached 2023 Bahrain GP session
+  using Playwright, embedded in the README.
+- Verified with a full `streamlit run` + Playwright walkthrough: loaded a
+  Race and a Qualifying session for real, navigated every page, confirmed
+  every chart and table renders correctly with real data end to end.
+- **v1.0.0**: every application section from the original spec is
+  implemented, tested, and reachable in the running app, with documented
+  methodology for every derived metric. Tagged `v1.0.0`; the project now
+  enters maintenance mode per the README's roadmap.
+
 ## 2026-08-29 — Branding: project logo
 
 - Added `assets/logo.svg` (the horizontal icon+wordmark lockup) and a

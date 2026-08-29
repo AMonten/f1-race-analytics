@@ -98,4 +98,4 @@ def test_get_track_status_periods_separates_non_contiguous_ranges():
     vsc_periods = periods[periods["status_code"] == "6"]
 
     assert len(vsc_periods) == 2
-    assert set(zip(vsc_periods["start_lap"], vsc_periods["end_lap"])) == {(2, 2), (4, 4)}
+    assert set(zip(vsc_periods["start_lap"], vsc_periods["end_lap"], strict=True)) == {(2, 2), (4, 4)}
