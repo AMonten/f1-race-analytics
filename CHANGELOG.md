@@ -3,6 +3,44 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 4: Tyres, stints and degradation model
+
+- `f1analytics.analysis.stints`: `reconstruct_driver_stints`/
+  `reconstruct_all_stints` build `Stint` records (compound, start/end lap,
+  length, tyre age start/end from FastF1's `TyreLife`, clean-lap count,
+  median pace, pace variation) from every lap of a driver, grouped by
+  FastF1's own `Stint` counter. Laps with a missing `Stint` value are
+  excluded rather than mis-attributed.
+- `f1analytics.models.degradation`: `fit_degradation_model` — OLS fit of
+  `LapTime = α + β × TyreAge` via `scipy.stats.linregress`, returning
+  sample size, intercept, slope, R², p-value, and std error. Returns
+  `None` regression fields with an explicit `warning` when there are fewer
+  than 2 observations (`"insufficient_observations"`) or no variation in
+  tyre age (`"no_tyre_age_variation"`); flags (but still fits and returns)
+  `"low_sample_size"` below 5 observations.
+- `f1analytics.analysis.tyres`: `compute_stint_degradation`/
+  `compute_driver_degradation`/`compute_field_degradation` — fit the
+  degradation model per driver/stint using that stint's clean laps only
+  (reusing the Milestone 2 clean-lap flags rather than a new filter).
+- New dependency: `scipy>=1.11` (justified by needing OLS regression with
+  significance/goodness-of-fit statistics, not just a raw slope).
+- New config constants: `MIN_DEGRADATION_OBSERVATIONS`,
+  `DEGRADATION_LOW_SAMPLE_THRESHOLD`.
+- Full methodology documented in both module docstrings and the README,
+  including the explicit statement that tyre age is not implied to be the
+  only cause of lap-time evolution (fuel burn-off, track evolution,
+  traffic, and pace management are all entangled in the fitted slope).
+- Verified against real data (2023 Bahrain GP Race): 70 stints
+  reconstructed across the grid (35 Soft / 34 Hard / 1 Medium stints,
+  consistent with the race's real two-stop strategies); VER's first
+  (11-lap Soft) stint showed a small but statistically significant
+  degradation slope (~0.066 s/lap, R²=0.88), while shorter later stints
+  showed flat, non-significant slopes — directionally sensible.
+- 17 new pytest tests (degradation fit correctness on synthetic
+  known-slope data, all warning paths, NaN handling; stint reconstruction
+  shape/pace-stats/missing-stint-data edge cases; per-driver and
+  field-level degradation wrappers).
+
 ## 2026-08-29 — Milestone 3: Race pace and driver comparison
 
 - `f1analytics.analysis.laps`: `get_driver_laps`/`get_clean_driver_laps`

@@ -52,3 +52,14 @@ OUTLIER_MAD_MULTIPLIER: float = 3.0
 # consistent stints (near-zero natural variance) don't get essentially every
 # lap flagged as an outlier over sub-tenth differences.
 OUTLIER_MIN_MAD_SECONDS: float = 0.05
+
+# --- Tyre degradation model (see f1analytics.models.degradation) ---
+
+# Below this many clean-lap observations, no slope can be fit at all (need
+# at least 2 points to draw a line).
+MIN_DEGRADATION_OBSERVATIONS: int = 2
+
+# Below this many observations, a slope IS still fit and returned, but
+# flagged with a "low_sample_size" warning rather than silently presented
+# as equally reliable as a well-sampled stint.
+DEGRADATION_LOW_SAMPLE_THRESHOLD: int = 5

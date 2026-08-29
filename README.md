@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%203%20%E2%80%94%20race%20pace-yellow)
+![Status](https://img.shields.io/badge/status-Milestone%204%20%E2%80%94%20tyres%20%26%20degradation-yellow)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -57,8 +57,11 @@ f1-race-analytics/
 │       ├── analysis/
 │       │   ├── laps.py        # per-driver lap slicing, fastest-lap lookup
 │       │   ├── pace.py        # representative race pace, driver comparison
-│       │   └── ...            # tyres, stints, pit stops, qualifying, telemetry (later milestones)
-│       ├── models/            # (Milestone 4) tyre degradation regression
+│       │   ├── stints.py      # tyre stint reconstruction
+│       │   ├── tyres.py       # per-stint/field tyre degradation fitting
+│       │   └── ...            # pit stops, qualifying, telemetry (later milestones)
+│       ├── models/
+│       │   └── degradation.py # LapTime = α + β×TyreAge linear fit (scipy)
 │       └── visualization/     # (Milestone 5+) Plotly chart builders
 │
 ├── tests/                     # pytest — analytical logic, not FastF1 itself
@@ -93,11 +96,17 @@ Implemented (Milestone 3):
   representative lap, sample size, delta to field median, Race Pace Index)
 - [x] Two-driver pace comparison (median/fastest-lap/consistency deltas)
 
+Implemented (Milestone 4):
+
+- [x] Tyre stint reconstruction (compound, lap range, length, tyre age,
+  median pace, pace variation) for any driver or the whole grid
+- [x] Tyre degradation model: `LapTime = α + β × TyreAge`, fit per
+  driver/stint with sample size, R², p-value and low-sample warnings
+
 Planned (see [Roadmap](#11-roadmap)):
 
 - [ ] Race position evolution with pit-stop and SC/VSC markers
 - [ ] Full two-driver comparison (strategy, stints, telemetry — pace comparison already implemented)
-- [ ] Tyre stint reconstruction and a simple degradation model
 - [ ] Pit-stop timing and approximate time-loss analysis
 - [ ] Qualifying analysis (Q1/Q2/Q3, sector times, lap comparison)
 - [ ] Distance-synchronized telemetry comparison
@@ -161,6 +170,16 @@ field_pace = compute_field_race_pace(flagged)          # one row per driver
 comparison = compare_driver_pace(flagged, "VER", "PER")  # head-to-head deltas
 ```
 
+Or reconstruct tyre stints and fit the degradation model:
+
+```python
+from f1analytics.analysis.stints import reconstruct_all_stints
+from f1analytics.analysis.tyres import compute_field_degradation
+
+stints = reconstruct_all_stints(flagged)          # one row per (driver, stint)
+degradation = compute_field_degradation(flagged)  # one row per (driver, stint), with slope/R²/warnings
+```
+
 Run the test suite:
 
 ```bash
@@ -218,10 +237,35 @@ from the code that implements it:
   `DriverPaceComparison` (which reports median/fastest-lap/consistency
   deltas between two drivers rather than two independent numbers).
 
-- **Tyre degradation model, pit-stop time-loss estimation** — to be
-  documented here as Milestone 4 is implemented. Every derived metric will
-  state precisely what is included/excluded, why, and what it does *not*
-  claim to prove.
+- **Tyre stint reconstruction** — a stint is a continuous run on one set of
+  tyres, identified by FastF1's own per-lap `Stint` counter. Stints are
+  built from *all* of a driver's laps (so the lap range and transitions are
+  correct), but `median_pace_s`/`pace_variation_s` are computed from that
+  stint's clean laps only, consistent with the rest of the pace
+  methodology. Tyre age uses FastF1's `TyreLife` directly (not a
+  recomputed lap-in-stint counter), so a stint started on a used
+  ("non-fresh") set of tyres is represented correctly. See
+  `f1analytics.analysis.stints`.
+
+- **Tyre degradation model** — a simple linear fit,
+  `LapTime = α + β × TyreAge`, computed independently per driver/stint via
+  ordinary least squares (`scipy.stats.linregress`), using only that
+  stint's clean laps (the same "appropriate lap" criteria as the rest of
+  the project, not a bespoke filter). Every fit reports its sample size,
+  R², and p-value, and is flagged `"low_sample_size"` below 5 observations
+  or `"insufficient_observations"`/`"no_tyre_age_variation"` when no slope
+  can be fit at all — never silently presented as more reliable than it is.
+  **This model does not separate tyre degradation from fuel burn-off,
+  track evolution, traffic, or deliberate pace management** — all of these
+  also move lap times over a stint and are entangled in the fitted slope.
+  A single stint on one compound at one circuit on one day is a small
+  sample: treat the slope as describing *that stint*, not a compound's
+  general degradation characteristics. See
+  `f1analytics.models.degradation` for the full docstring and
+  `f1analytics.analysis.tyres` for the driver/stint/field-level wrappers.
+
+- **Pit-stop time-loss estimation** — to be documented here as Milestone 5
+  is implemented.
 
 ## 9. Data source
 
@@ -252,7 +296,7 @@ once the first milestone commit lands)* for what's shipped.
 1. ~~Project structure, FastF1 ingestion, caching, session selection~~ ✅
 2. ~~Lap preprocessing and clean-lap methodology~~ ✅
 3. ~~Race pace and driver comparison~~ ✅
-4. Tyres, stints and degradation model
+4. ~~Tyres, stints and degradation model~~ ✅
 5. Race position evolution and pit-stop analysis
 6. Qualifying and telemetry analysis
 7. Streamlit UX and visualization refinement
@@ -267,10 +311,9 @@ this repository enters maintenance mode; strategy simulation is planned as a
 
 ## 12. Project status
 
-**Milestone 3 of 8 — race pace and driver comparison.** Project structure,
-FastF1 ingestion, caching, session selection, the clean-lap methodology, and
-representative race pace (including the Race Pace Index and two-driver pace
-comparison) are implemented and tested. Not yet ready for general use as an
-analytics tool — tyre/stint, pit-stop, qualifying, and telemetry analysis,
-and the interactive dashboard sections for all of the above, are still to
-come.
+**Milestone 4 of 8 — tyres, stints and degradation.** Project structure,
+FastF1 ingestion, caching, session selection, the clean-lap methodology,
+representative race pace, tyre stint reconstruction, and the linear tyre
+degradation model are implemented and tested. Not yet ready for general use
+as an analytics tool — pit-stop, qualifying, and telemetry analysis, and the
+interactive dashboard sections for all of the above, are still to come.
