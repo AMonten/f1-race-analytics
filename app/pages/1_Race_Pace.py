@@ -12,12 +12,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import plotly.express as px
 import streamlit as st
-from state import get_flagged_laps, require_selection
+from state import FAVICON_PATH, get_flagged_laps, render_branding, require_selection
 
 from f1analytics.analysis.pace import compare_driver_pace, compute_field_race_pace
 from f1analytics.visualization import TEAM_COLORS
 
-st.set_page_config(page_title="Race Pace — F1 Race Analytics", page_icon="🏎️", layout="wide")
+st.set_page_config(page_title="Race Pace — F1 Race Analytics", page_icon=str(FAVICON_PATH), layout="wide")
+render_branding()
 
 require_selection()
 flagged = get_flagged_laps()

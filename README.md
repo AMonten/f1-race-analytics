@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/logo.svg" alt="F1 Race Analytics" width="480">
+</p>
+
 # F1 Race Analytics
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
@@ -79,6 +83,7 @@ f1-race-analytics/
 ├── tests/                     # pytest — analytical logic, not FastF1 itself
 ├── notebooks/exploration/     # scratch analysis, not shipped code
 ├── data/                      # FastF1 cache lives here, gitignored
+├── assets/                    # logo/icon (README + app favicon/sidebar branding)
 └── pyproject.toml / requirements.txt
 ```
 

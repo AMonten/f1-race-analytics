@@ -14,7 +14,7 @@ from __future__ import annotations
 import logging
 
 import streamlit as st
-from state import get_selection, get_session, set_selection
+from state import FAVICON_PATH, get_selection, get_session, render_branding, set_selection
 
 from f1analytics.data import loader
 from f1analytics.data.loader import SessionLoadError, SessionOverview
@@ -24,9 +24,10 @@ logger = logging.getLogger(__name__)
 
 st.set_page_config(
     page_title="F1 Race Analytics",
-    page_icon=":checkered_flag:",
+    page_icon=str(FAVICON_PATH),
     layout="wide",
 )
+render_branding()
 
 
 @st.cache_data(show_spinner=False)

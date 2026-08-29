@@ -11,15 +11,18 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
-from state import get_flagged_laps, require_selection
+from state import FAVICON_PATH, get_flagged_laps, render_branding, require_selection
 
 from f1analytics.analysis.pitstops import reconstruct_all_pit_stops
 from f1analytics.analysis.race import get_position_by_lap, get_track_status_periods
 from f1analytics.visualization.race import build_position_evolution_chart
 
 st.set_page_config(
-    page_title="Position & Pit Stops — F1 Race Analytics", page_icon="📈", layout="wide"
+    page_title="Position & Pit Stops — F1 Race Analytics",
+    page_icon=str(FAVICON_PATH),
+    layout="wide",
 )
+render_branding()
 
 require_selection()
 flagged = get_flagged_laps()

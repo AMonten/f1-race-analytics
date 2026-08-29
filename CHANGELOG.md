@@ -3,6 +3,18 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Branding: project logo
+
+- Added `assets/logo.svg` (the horizontal icon+wordmark lockup) and a
+  derived square `assets/icon.svg` variant, rasterized to
+  `assets/icon-64.png` (app favicon) and `assets/icon-512.png` (general
+  high-res use, e.g. social previews).
+- README: logo banner at the top of the file.
+- App: favicon set from the icon PNG on every page; `app/state.py` gained
+  `render_branding()` (calls `st.logo`, wide logo in the sidebar header,
+  square icon when collapsed), called from the Overview page and all five
+  analysis pages.
+
 ## 2026-08-29 — Milestone 7: Streamlit dashboard
 
 - `f1analytics.visualization`: three chart-builder modules, each a pure

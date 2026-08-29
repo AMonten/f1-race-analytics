@@ -11,7 +11,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
-from state import get_flagged_laps, get_session, is_qualifying_like, require_selection
+from state import (
+    FAVICON_PATH,
+    get_flagged_laps,
+    get_session,
+    is_qualifying_like,
+    render_branding,
+    require_selection,
+)
 
 from f1analytics.analysis.qualifying import (
     compare_teammates,
@@ -22,7 +29,10 @@ from f1analytics.analysis.qualifying import (
 )
 from f1analytics.data import loader as data_loader
 
-st.set_page_config(page_title="Qualifying — F1 Race Analytics", page_icon="🏆", layout="wide")
+st.set_page_config(
+    page_title="Qualifying — F1 Race Analytics", page_icon=str(FAVICON_PATH), layout="wide"
+)
+render_branding()
 
 require_selection()
 session = get_session()

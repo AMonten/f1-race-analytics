@@ -8,12 +8,19 @@ cache keys. UI glue only; no analytical logic lives here.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import streamlit as st
 
 from f1analytics.data import loader
 from f1analytics.data.preprocessing import add_lap_quality_flags
 
 SELECTION_KEY = "f1_session_selection"  # (year, round_number, session_identifier)
+
+ASSETS_DIR = Path(__file__).resolve().parent.parent / "assets"
+LOGO_PATH = ASSETS_DIR / "logo.svg"
+ICON_PATH = ASSETS_DIR / "icon.svg"
+FAVICON_PATH = ASSETS_DIR / "icon-64.png"
 
 # FastF1 session names that split into Q1/Q2/Q3 (see
 # fastf1.core.Session._QUALI_LIKE_SESSIONS, which varies by season rules).
@@ -75,3 +82,12 @@ def require_selection() -> tuple[int, int, str]:
 def is_qualifying_like(session) -> bool:
     """True if `session` is a Qualifying, Sprint Qualifying, or Sprint Shootout session."""
     return session.name in QUALIFYING_LIKE_SESSION_NAMES
+
+
+def render_branding() -> None:
+    """Show the project logo in the sidebar header. Call once per page, right after `st.set_page_config`."""
+    st.logo(
+        str(LOGO_PATH),
+        icon_image=str(ICON_PATH),
+        link="https://github.com/AMonten/f1-race-analytics",
+    )

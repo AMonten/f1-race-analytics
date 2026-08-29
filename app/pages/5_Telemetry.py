@@ -14,13 +14,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 import streamlit as st
-from state import get_flagged_laps, get_selection, require_selection
+from state import FAVICON_PATH, get_flagged_laps, get_selection, render_branding, require_selection
 
 from f1analytics.analysis.telemetry import compare_lap_telemetry, identify_gain_loss_zones
 from f1analytics.data import loader as data_loader
 from f1analytics.visualization.telemetry import build_telemetry_channels_chart, build_time_delta_chart
 
-st.set_page_config(page_title="Telemetry — F1 Race Analytics", page_icon="📡", layout="wide")
+st.set_page_config(page_title="Telemetry — F1 Race Analytics", page_icon=str(FAVICON_PATH), layout="wide")
+render_branding()
 
 require_selection()
 flagged = get_flagged_laps()
