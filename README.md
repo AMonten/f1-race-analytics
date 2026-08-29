@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%202%20%E2%80%94%20clean%20laps-yellow)
+![Status](https://img.shields.io/badge/status-Milestone%203%20%E2%80%94%20race%20pace-yellow)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -54,8 +54,10 @@ f1-race-analytics/
 │       │   ├── cache.py       # FastF1 on-disk cache management
 │       │   └── preprocessing.py   # clean-lap methodology (flags, never drops rows)
 │       │
-│       ├── analysis/          # (Milestones 2–6) pace, tyres, stints,
-│       │                      # pit stops, qualifying, telemetry
+│       ├── analysis/
+│       │   ├── laps.py        # per-driver lap slicing, fastest-lap lookup
+│       │   ├── pace.py        # representative race pace, driver comparison
+│       │   └── ...            # tyres, stints, pit stops, qualifying, telemetry (later milestones)
 │       ├── models/            # (Milestone 4) tyre degradation regression
 │       └── visualization/     # (Milestone 5+) Plotly chart builders
 │
@@ -85,11 +87,16 @@ Implemented (Milestone 2):
   non-green track status, deletion, FastF1 accuracy, and statistical
   outlier status — see [Analytical methodology](#8-analytical-methodology)
 
+Implemented (Milestone 3):
+
+- [x] Representative race pace per driver (median, mean, std, fastest
+  representative lap, sample size, delta to field median, Race Pace Index)
+- [x] Two-driver pace comparison (median/fastest-lap/consistency deltas)
+
 Planned (see [Roadmap](#11-roadmap)):
 
 - [ ] Race position evolution with pit-stop and SC/VSC markers
-- [ ] Race Pace Index and driver/field pace comparisons
-- [ ] Two-driver comparison (pace, consistency, strategy, telemetry)
+- [ ] Full two-driver comparison (strategy, stints, telemetry — pace comparison already implemented)
 - [ ] Tyre stint reconstruction and a simple degradation model
 - [ ] Pit-stop timing and approximate time-loss analysis
 - [ ] Qualifying analysis (Q1/Q2/Q3, sector times, lap comparison)
@@ -143,6 +150,17 @@ overview = loader.summarize_session(session)
 print(overview.event_name, overview.total_laps, overview.drivers)
 ```
 
+Or compute race pace directly:
+
+```python
+from f1analytics.data.preprocessing import add_lap_quality_flags
+from f1analytics.analysis.pace import compute_field_race_pace, compare_driver_pace
+
+flagged = add_lap_quality_flags(session.laps)
+field_pace = compute_field_race_pace(flagged)          # one row per driver
+comparison = compare_driver_pace(flagged, "VER", "PER")  # head-to-head deltas
+```
+
 Run the test suite:
 
 ```bash
@@ -177,12 +195,33 @@ from the code that implements it:
   (e.g. ordinary traffic-related loss that isn't extreme enough to trip the
   MAD threshold).
 
-- **Race Pace Index, tyre degradation model, pit-stop time-loss
-  estimation** — to be documented here as Milestones 3–4 are implemented.
-  Every derived metric will state precisely what is included/excluded,
-  why, and what it does *not* claim to prove (in particular: race pace and
-  degradation figures describe performance *within the selected session*,
-  not a general measure of driver or tyre ability).
+- **Race pace and Race Pace Index** — computed exclusively from clean laps
+  (see above). For each driver: median, mean, and standard deviation of
+  clean lap time, the fastest *representative* lap (fastest among clean
+  laps — not necessarily the outright fastest lap of the session, which may
+  have been set under conditions the clean-lap methodology excludes), the
+  number of clean-lap observations, and the delta to the field median.
+  The **Race Pace Index** is defined as:
+
+  ```
+  RacePaceIndex = 100 × field_median_clean_lap_seconds / driver_median_clean_lap_seconds
+  ```
+
+  where the field median is computed over every clean lap set by every
+  driver in the session (not the median of per-driver medians). 100 means
+  the driver's median clean lap matched the field median; above 100 means
+  faster than the field median; below 100 means slower. **This index mixes
+  car performance, tyre strategy, fuel load, and traffic — it is not a
+  normalized measure of driver skill**, and figures from different
+  sessions or seasons are not comparable to each other. See
+  `f1analytics.analysis.pace` for the full docstring, `DriverRacePace`, and
+  `DriverPaceComparison` (which reports median/fastest-lap/consistency
+  deltas between two drivers rather than two independent numbers).
+
+- **Tyre degradation model, pit-stop time-loss estimation** — to be
+  documented here as Milestone 4 is implemented. Every derived metric will
+  state precisely what is included/excluded, why, and what it does *not*
+  claim to prove.
 
 ## 9. Data source
 
@@ -212,7 +251,7 @@ once the first milestone commit lands)* for what's shipped.
 
 1. ~~Project structure, FastF1 ingestion, caching, session selection~~ ✅
 2. ~~Lap preprocessing and clean-lap methodology~~ ✅
-3. Race pace and driver comparison
+3. ~~Race pace and driver comparison~~ ✅
 4. Tyres, stints and degradation model
 5. Race position evolution and pit-stop analysis
 6. Qualifying and telemetry analysis
@@ -228,8 +267,10 @@ this repository enters maintenance mode; strategy simulation is planned as a
 
 ## 12. Project status
 
-**Milestone 2 of 8 — clean-lap methodology.** Project structure, FastF1
-ingestion, caching, session selection, and the clean-lap flagging
-methodology are implemented and tested. Not yet ready for general use as an
-analytics tool — pace, tyre/stint, pit-stop, qualifying, and telemetry
-analysis are still to come.
+**Milestone 3 of 8 — race pace and driver comparison.** Project structure,
+FastF1 ingestion, caching, session selection, the clean-lap methodology, and
+representative race pace (including the Race Pace Index and two-driver pace
+comparison) are implemented and tested. Not yet ready for general use as an
+analytics tool — tyre/stint, pit-stop, qualifying, and telemetry analysis,
+and the interactive dashboard sections for all of the above, are still to
+come.

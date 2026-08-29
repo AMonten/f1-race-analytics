@@ -3,6 +3,30 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 3: Race pace and driver comparison
+
+- `f1analytics.analysis.laps`: `get_driver_laps`/`get_clean_driver_laps`
+  (raise `UnknownDriverError` on a bad driver code rather than returning a
+  silently-empty result) and `fastest_lap`.
+- `f1analytics.analysis.pace`: `compute_driver_race_pace` (median, mean,
+  std, fastest representative lap, sample size, delta to field median, and
+  the new **Race Pace Index** — `100 × field_median / driver_median` clean
+  lap seconds, documented as a within-session index, not driver ability),
+  `compute_field_race_pace` (whole-field table, fastest-median-first), and
+  `compare_driver_pace` (median/fastest-lap/consistency deltas between two
+  drivers, `None` rather than a misleading number when either driver has
+  insufficient clean-lap data).
+- Full methodology written up in the README's Analytical methodology
+  section, including the exact index formula and its stated limitations.
+- Verified against real data (2023 Bahrain GP Race): field race pace table
+  correctly ranks PER/VER/ALO at the top by Race Pace Index; VER vs. PER
+  comparison shows VER with a slower median (managing a comfortable lead)
+  but a faster representative lap and better consistency — all directionally
+  consistent with how that race actually played out.
+- 14 new pytest tests (basic stats, zero/one-clean-lap edge cases, Race
+  Pace Index at parity and above-field-median, field-table sorting with a
+  no-clean-laps driver, comparison delta signs, comparison with missing data).
+
 ## 2026-08-29 — Milestone 2: Clean-lap methodology
 
 - `f1analytics.data.preprocessing.add_lap_quality_flags`: flags every lap
