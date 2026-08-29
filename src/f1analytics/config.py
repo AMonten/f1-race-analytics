@@ -33,3 +33,22 @@ SESSION_TYPE_LABELS: dict[str, str] = {
     "S": "Sprint",
     "R": "Race",
 }
+
+# --- Clean-lap methodology (see f1analytics.data.preprocessing) ---
+
+# FastF1 track-status codes that indicate the track was NOT green for the
+# full duration of a lap. Any of these appearing in a lap's TrackStatus
+# string is enough to exclude the lap from the "clean" set. '3' is included
+# defensively even though FastF1's own docs say it has never been observed.
+NON_GREEN_TRACK_STATUS_CODES: frozenset[str] = frozenset({"2", "3", "4", "5", "6", "7"})
+
+# A lap's time is flagged as a statistical outlier if it deviates from its
+# driver/stint group's median by more than this many scaled MADs (Median
+# Absolute Deviations). 1.4826 * MAD approximates a normal distribution's
+# standard deviation, so this multiplier is comparable to a z-score threshold.
+OUTLIER_MAD_MULTIPLIER: float = 3.0
+
+# Floor applied to the scaled MAD before comparison, so that extremely
+# consistent stints (near-zero natural variance) don't get essentially every
+# lap flagged as an outlier over sub-tenth differences.
+OUTLIER_MIN_MAD_SECONDS: float = 0.05

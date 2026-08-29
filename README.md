@@ -2,7 +2,7 @@
 
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Status](https://img.shields.io/badge/status-Milestone%201%20%E2%80%94%20foundations-yellow)
+![Status](https://img.shields.io/badge/status-Milestone%202%20%E2%80%94%20clean%20laps-yellow)
 ![Built with FastF1](https://img.shields.io/badge/data-FastF1-e10600)
 
 > **Unofficial project.** This is not affiliated with, endorsed by, or connected
@@ -52,7 +52,7 @@ f1-race-analytics/
 │       ├── data/
 │       │   ├── loader.py      # the only module that talks to FastF1
 │       │   ├── cache.py       # FastF1 on-disk cache management
-│       │   └── preprocessing.py   # (Milestone 2) clean-lap methodology
+│       │   └── preprocessing.py   # clean-lap methodology (flags, never drops rows)
 │       │
 │       ├── analysis/          # (Milestones 2–6) pace, tyres, stints,
 │       │                      # pit stops, qualifying, telemetry
@@ -79,10 +79,15 @@ Implemented so far (Milestone 1):
 - [x] FastF1 on-disk caching (sessions are fetched once, reused afterwards)
 - [x] Session overview: event metadata, drivers, teams, results/classification, weather summary
 
+Implemented (Milestone 2):
+
+- [x] Clean-lap methodology: every lap flagged (not dropped) for pit-lap,
+  non-green track status, deletion, FastF1 accuracy, and statistical
+  outlier status — see [Analytical methodology](#8-analytical-methodology)
+
 Planned (see [Roadmap](#11-roadmap)):
 
 - [ ] Race position evolution with pit-stop and SC/VSC markers
-- [ ] Clean-lap methodology and lap-time analysis
 - [ ] Race Pace Index and driver/field pace comparisons
 - [ ] Two-driver comparison (pace, consistency, strategy, telemetry)
 - [ ] Tyre stint reconstruction and a simple degradation model
@@ -152,13 +157,32 @@ from the code that implements it:
 - **Session overview** — read directly from FastF1's event schedule, session
   results, and weather data. No derived statistics; see
   `f1analytics.data.loader.summarize_session`.
-- **Clean-lap classification, Race Pace Index, tyre degradation model,
-  pit-stop time-loss estimation** — to be documented here as Milestones 2–4
-  are implemented. Every derived metric will state precisely what is
-  included/excluded, why, and what it does *not* claim to prove (in
-  particular: race pace and degradation figures describe performance
-  *within the selected session*, not a general measure of driver or tyre
-  ability).
+
+- **Clean-lap methodology** — a lap is flagged `IsCleanLap` only if it (1)
+  has a recorded lap time, (2) is not a pit in/out lap, (3) has no
+  non-green FastF1 track-status code (yellow flag, Safety Car, Virtual
+  Safety Car, or red flag) anywhere during the lap, (4) was not deleted by
+  stewards, (5) is flagged `IsAccurate` by FastF1 itself (sector times sum
+  consistently), and (6) is not a statistical outlier relative to its own
+  driver/stint group — computed as more than 3 scaled Median Absolute
+  Deviations from that group's median lap time, with the MAD floored at
+  0.05s so ultra-consistent stints aren't over-flagged, and skipped
+  entirely for groups with fewer than 2 candidate laps.
+  **No lap is ever deleted** — `add_lap_quality_flags` returns every input
+  row plus these flag columns, so raw data (e.g. a driver's own in-lap) is
+  always still available. See the full methodology and its documented
+  limitations in the `f1analytics.data.preprocessing` module docstring —
+  in particular, this heuristic can occasionally flag a legitimately fast
+  lap on a short stint, and does not catch every non-representative lap
+  (e.g. ordinary traffic-related loss that isn't extreme enough to trip the
+  MAD threshold).
+
+- **Race Pace Index, tyre degradation model, pit-stop time-loss
+  estimation** — to be documented here as Milestones 3–4 are implemented.
+  Every derived metric will state precisely what is included/excluded,
+  why, and what it does *not* claim to prove (in particular: race pace and
+  degradation figures describe performance *within the selected session*,
+  not a general measure of driver or tyre ability).
 
 ## 9. Data source
 
@@ -187,7 +211,7 @@ Development proceeds in milestones; see [`CHANGELOG.md`](CHANGELOG.md) *(added
 once the first milestone commit lands)* for what's shipped.
 
 1. ~~Project structure, FastF1 ingestion, caching, session selection~~ ✅
-2. Lap preprocessing and clean-lap methodology
+2. ~~Lap preprocessing and clean-lap methodology~~ ✅
 3. Race pace and driver comparison
 4. Tyres, stints and degradation model
 5. Race position evolution and pit-stop analysis
@@ -204,7 +228,8 @@ this repository enters maintenance mode; strategy simulation is planned as a
 
 ## 12. Project status
 
-**Milestone 1 of 8 — foundations.** Project structure, FastF1 ingestion,
-caching, and session selection are implemented and tested. Not yet ready for
-general use as an analytics tool — the analytical sections described above
-are still to come.
+**Milestone 2 of 8 — clean-lap methodology.** Project structure, FastF1
+ingestion, caching, session selection, and the clean-lap flagging
+methodology are implemented and tested. Not yet ready for general use as an
+analytics tool — pace, tyre/stint, pit-stop, qualifying, and telemetry
+analysis are still to come.

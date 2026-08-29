@@ -3,6 +3,28 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-08-29 — Milestone 2: Clean-lap methodology
+
+- `f1analytics.data.preprocessing.add_lap_quality_flags`: flags every lap
+  (never drops rows) as pit lap, non-green-track-status, deleted,
+  FastF1-inaccurate, and/or a statistical outlier (>3 scaled MAD from its
+  driver/stint group's median, grouped by `(Driver, Stint)` so tyre/fuel
+  differences between stints don't distort the baseline), then combines
+  those into a single `IsCleanLap` flag.
+- `filter_clean_laps`: explicit opt-in filter on top of the flags.
+- New constants in `config.py`: `NON_GREEN_TRACK_STATUS_CODES` (FastF1's
+  documented track-status codes for yellow/SC/VSC/red), `OUTLIER_MAD_MULTIPLIER`,
+  `OUTLIER_MIN_MAD_SECONDS`.
+- Full methodology documented in the module docstring and mirrored in the
+  README's Analytical methodology section.
+- Verified against real data (2023 Bahrain GP Race, 1056 laps): 102 pit
+  laps, 77 non-green-track-status laps, 142 FastF1-inaccurate laps, 172
+  statistical outliers (concentrated on lap 1 — standing start — and around
+  a mid-race Safety Car restart, as expected), 852 clean laps retained.
+- 19 pytest tests covering each flag independently, per-group outlier
+  scoping, the insufficient-candidates edge case, non-mutation of input,
+  and both success/error paths of `filter_clean_laps`.
+
 ## 2026-08-29 — Milestone 1: Foundations
 
 - Initial project skeleton: `src/f1analytics` package (src layout), `app/`
