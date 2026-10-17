@@ -3,6 +3,22 @@
 Dated log of shipped milestones. See the README's Roadmap section for what's
 still planned.
 
+## 2026-10-16 — Case study: Alonso full-throttle gap
+
+- New `case-studies/2026-alonso-full-throttle/` (outside the package; no
+  change to `f1analytics` or its tests). It reproduces The Race's split of
+  Alonso's 2026 qualifying gap to pole into full-throttle vs. rest-of-lap
+  time loss across 7 tracks, using OpenF1 `car_data` + `location` (FastF1
+  had no telemetry for Singapore Q).
+- Two alignment methods: v1 integrates speed into distance (kept as
+  `--method speed`, because its braking-point drift moves time from corners
+  onto straights), and v2 projects GPS position onto the pole path. The
+  published figures come from v2. The computed total gap matches the official
+  lap-time gap at all 7 tracks.
+- Also includes `results.csv`, the v1 comparison CSV, a 5-slide Instagram
+  carousel renderer (`slides.py`, needs matplotlib), and a README covering
+  methodology and limitations. README gains section 13 (Case studies).
+
 ## 2026-08-29 — Milestone 8: v1.0.0 release
 
 - **Testing**: extended coverage of `f1analytics.data.loader`'s own logic

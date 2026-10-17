@@ -487,3 +487,15 @@ thin UI layer over the tested `f1analytics.analysis`/`visualization`
 modules, with every derived metric's methodology documented above. Future
 work on this repo is limited to bug fixes and dependency updates; new
 functionality (e.g. strategy simulation) will live in a separate project.
+
+## 13. Case studies
+
+One-off analyses that use the project's methods on a specific question.
+They live in [`case-studies/`](case-studies/), outside the `f1analytics`
+package, so they don't change its scope or its FastF1-only data layer. Each
+one has its own README, script and limitations.
+
+- [**Alonso, Honda and the full-throttle gap (2026 qualifying)**](case-studies/2026-alonso-full-throttle/).
+  Checks The Race's split of Alonso's qualifying gap into straights vs. the
+  rest of the lap, using open OpenF1 telemetry. It also documents the
+  alignment bug in a first version that changed the conclusion.
